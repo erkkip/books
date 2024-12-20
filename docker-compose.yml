@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: ./docker/nginx/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./.local/certs:/etc/pki/tls/certs
+      - ./.local/private:/etc/pki/tls/private
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8788:80"
+    networks:
+      - boilerplate-network
+
+  express:
+    build:
+      context: .
+      dockerfile: ./docker/express/Dockerfile
+      target: prod
+    networks:
+      - boilerplate-network
+    environment:
+      - ENV_VALUE=${ENV_VALUE}
+      - QBITTORRENT_URL=${QBITTORRENT_URL}
+      - QBITTORRENT_USERNAME=${QBITTORRENT_USERNAME}
+      - QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD}
+      - QBITTORRENT_ADD_PAUSED=${QBITTORRENT_ADD_PAUSED}
+
+networks:
+  boilerplate-network:
+    driver: bridge
