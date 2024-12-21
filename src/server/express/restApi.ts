@@ -2,9 +2,10 @@ import packageJSON from "../../../package.json";
 import express, { Application } from "express";
 import cors from "cors";
 import { Request, Response } from "express";
-import axios from "axios";
+import { AxiosError, AxiosResponse } from "axios";
 import bodyParser from "body-parser";
 import { qBittorrentClient, TorrentAddParameters } from '@robertklep/qbittorrent';
+import MyAnonamouseClient from "../utils/myanonamouseClient";
 
 const app: Application = express();
 
@@ -41,30 +42,18 @@ app.get('/api/v1/mamid', (req, res) => {
 });
 
 app.post('/api/v1/search', jsonParser, async (req, res) => {
-  const client = axios.create({
-      baseURL: 'https://www.myanonamouse.net',
-      headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Cookie': 'uid=217012; mam_id=' + mamId,
-      },
-  });
+  const client = new MyAnonamouseClient(mamId);
 
-  const {data} = await client.post('/tor/js/loadSearchJSONbasic.php', {
-      "tor": {
-          "text": req.body.search,
-          "srchIn": {
-              "title": "true",
-              "author": "true"
-          },
-          "main_cat": [14],
-          "searchType": "active"
-      },
-      "thumbnail": "true",
-      "dlLink": "true"
-  });
-
-  res.send(data);
+  await client.search(req.body.search)
+    .then((response: AxiosResponse) => {
+      res.status(response.status).send(response.data)
+    }).catch((response: AxiosError) => {
+      if (response.response) {
+        res.status(response.response.status).send(response.response.data)
+      } else {
+        res.status(500).send('Unable to connect to myanonamouse')
+      }
+    });
 });
 
 app.post('/api/v1/download', jsonParser, async (req, res) => {

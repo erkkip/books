@@ -40,6 +40,7 @@ function Header({setData}: {setData: React.Dispatch<React.SetStateAction<never[]
                 onChange={(event) =>
                   setSearch(event.target.value)
                 }
+                onFocus={e => e.target.select()}
                 endDecorator={
                   <IconButton
                     variant="solid"

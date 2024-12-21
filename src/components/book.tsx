@@ -41,27 +41,30 @@ function Book({book}: {book: BookType}) {
       <div>
         <Typography level="title-lg">{book.title}</Typography>
         <Typography level="body-sm">{authors}</Typography>
+      </div>
+      <CardContent orientation="horizontal">
+        <Stack spacing={1}>
+        <Typography level="body-xs">
+          <Stack spacing={1} direction="row">
+            <Box>{fileTypes.map((type, i) => <Chip size="sm" key={i} {...(type == 'epub' ? {color: 'success'} : {color: "neutral"})}>{type}</Chip>)}</Box>
+            <Divider orientation="vertical" />
+            <Box><Chip size="sm" color="neutral">{book.lang_code}</Chip></Box>
+          </Stack>
+        </Typography>
+        <Box>
         <IconButton
           aria-label="get"
           variant="soft"
           color="primary"
           size="sm"
-          sx={{ position: 'absolute', top: '0.875rem', right: '0.5rem' }}
           onClick={function(){ download() }}
           loading={loading}
           disabled={finished}
         >
           {finished ? (<Check />) : (<FileDownload />)}
         </IconButton>
-      </div>
-      <CardContent orientation="horizontal">
-        <Typography level="body-xs">
-          <Stack spacing={1} direction="row">
-            <Box>Filetype {fileTypes.map((type, i) => <Chip size="sm" key={i} {...(type == 'epub' ? {color: 'success'} : {color: "neutral"})}>{type}</Chip>)}</Box>
-            <Divider orientation="vertical" />
-            <Box>Language <Chip size="sm" color="neutral">{book.lang_code}</Chip></Box>
-          </Stack>
-        </Typography>
+        </Box>
+        </Stack>
       </CardContent>
     </Card>
   )

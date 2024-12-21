@@ -4,6 +4,7 @@ import Header from "@/components/header";
 import { CssVarsProvider } from "@mui/joy/styles/CssVarsProvider";
 import CssBaseline from "@mui/joy/CssBaseline/CssBaseline";
 import Stack from "@mui/joy/Stack/Stack";
+import Greeting from "@/components/greeting";
 
 const HomePage = (): JSX.Element => {
   const [data, setData] = useState([]);
@@ -13,7 +14,7 @@ const HomePage = (): JSX.Element => {
       <CssBaseline />
       <Header setData={setData}/>
       <Stack
-        spacing={4}
+        spacing={{ xs: 2, md: 3 }}
         sx={{
           display: 'flex',
           maxWidth: '800px',
@@ -22,6 +23,7 @@ const HomePage = (): JSX.Element => {
           py: { xs: 2, md: 3 },
         }}
       >
+          {!data.length ? (<Greeting />) : ("")}
           {data.map((b, i) => <Book book={b} key={i} />)}
       </Stack>
     </CssVarsProvider>
