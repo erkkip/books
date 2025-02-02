@@ -9,6 +9,7 @@ import Divider from "@mui/joy/Divider/Divider";
 import IconButton from "@mui/joy/IconButton/IconButton";
 import Stack from "@mui/joy/Stack/Stack";
 import Typography from "@mui/joy/Typography/Typography";
+import moment from "moment";
 
 function Book({book}: {book: BookType}) {
   const [loading, setLoading] = useState(false);
@@ -50,6 +51,14 @@ function Book({book}: {book: BookType}) {
             <Divider orientation="vertical" />
             <Box><Chip size="sm" color="neutral">{book.lang_code}</Chip></Box>
           </Stack>
+        </Typography>
+        <Typography level="body-xs">
+          <Box>
+            Size {book.size}
+          </Box>
+          <Box>
+            Added {moment(book.added).fromNow()}
+          </Box>
         </Typography>
         <Box>
         <IconButton

@@ -9,5 +9,7 @@ type BookType = {
   author_info: string
   filetype: string
   dl: string
-  lang_code: string
+  lang_code: string,
+  size: string,
+  added: string
 }
