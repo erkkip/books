@@ -50,6 +50,8 @@ app.post('/api/v1/search', jsonParser, async (req, res) => {
     .then((response: AxiosResponse) => {
       res.status(response.status).send(response.data)
     }).catch((response: AxiosError) => {
+      console.log('search request failed')
+      console.log(response)
       if (response.response) {
         res.status(response.response.status).send(response.response.data)
       } else {
@@ -60,28 +62,38 @@ app.post('/api/v1/search', jsonParser, async (req, res) => {
 
 app.post('/api/v1/download', jsonParser, async (req, res) => {
   let client;
-  
+  let response;
+
   try {
     client = new qBittorrentClient(
       process.env.QBITTORRENT_URL as string,
       process.env.QBITTORRENT_USERNAME as string,
       process.env.QBITTORRENT_PASSWORD as string
     );
-  } catch(err) {
+  } catch (err) {
+    console.log('failed to create qbittorrent client')
     console.log(err)
-    res.status(500).send('unable to connect to qbittorrent')
+    res.status(500).send('failed to create qbittorrent client')
 
     return
   }
 
-  const addPaused = process.env.QBITTORRENT_ADD_PAUSED as string == "true";
+  //const addPaused = process.env.QBITTORRENT_ADD_PAUSED as string == "true";
 
-  const response = await client.torrents.add(<TorrentAddParameters>{
-    urls: 'https://www.myanonamouse.net/tor/download.php/' + req.body.dl,
-    category: 'books',
-    seedingTimeLimit: 43200,
-    paused: addPaused
-  });
+  try {
+    response = await client.torrents.add(<TorrentAddParameters>{
+      urls: 'https://www.myanonamouse.net/tor/download.php/' + req.body.dl,
+      category: 'books',
+      seedingTimeLimit: 43200,
+      paused: true
+    });
+  } catch (err) {
+    console.log('failed to add torrent')
+    console.log(err)
+    res.status(500).send('failed to add torrent')
+
+    return
+  }
 
   if (response == 'Ok.') {
     res.status(204).send();
