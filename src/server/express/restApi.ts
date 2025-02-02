@@ -34,6 +34,8 @@ app.get(`/api/v1/version`, (req: Request, res: Response) => {
 app.post('/api/v1/mamid', jsonParser, (req, res) => {
   mamId = req.body.mamid;
 
+  console.log(`mamid set`);
+
   res.status(204).send();
 });
 
@@ -57,11 +59,20 @@ app.post('/api/v1/search', jsonParser, async (req, res) => {
 });
 
 app.post('/api/v1/download', jsonParser, async (req, res) => {
-  const client = new qBittorrentClient(
-    process.env.QBITTORRENT_URL as string,
-    process.env.QBITTORRENT_USERNAME as string,
-    process.env.QBITTORRENT_PASSWORD as string
-  );
+  let client;
+  
+  try {
+    client = new qBittorrentClient(
+      process.env.QBITTORRENT_URL as string,
+      process.env.QBITTORRENT_USERNAME as string,
+      process.env.QBITTORRENT_PASSWORD as string
+    );
+  } catch(err) {
+    console.log(err)
+    res.status(500).send('unable to connect to qbittorrent')
+
+    return
+  }
 
   const addPaused = process.env.QBITTORRENT_ADD_PAUSED as string == "true";
 
