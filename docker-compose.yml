@@ -1,33 +1,22 @@
-version: "3.9"
-services:
-  nginx:
-    build:
-      context: .
-      dockerfile: ./docker/nginx/Dockerfile
-    restart: unless-stopped
-    volumes:
-      - ./.local/certs:/etc/pki/tls/certs
-      - ./.local/private:/etc/pki/tls/private
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - "8788:80"
-    networks:
-      - boilerplate-network
+version: '3.8'
 
-  express:
+services:
+  app:
     build:
       context: .
-      dockerfile: ./docker/express/Dockerfile
-      target: prod
-    networks:
-      - boilerplate-network
+      dockerfile: Dockerfile
+    ports:
+      - "8585:80"
     environment:
-      - ENV_VALUE=${ENV_VALUE}
+      - NODE_ENV=production
       - QBITTORRENT_URL=${QBITTORRENT_URL}
       - QBITTORRENT_USERNAME=${QBITTORRENT_USERNAME}
       - QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD}
       - QBITTORRENT_ADD_PAUSED=${QBITTORRENT_ADD_PAUSED}
-
-networks:
-  boilerplate-network:
-    driver: bridge
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
