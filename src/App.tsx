@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, Settings, X, Book as BookIcon, BookText,BookOpen, BookOpenText } from 'lucide-react';
 import { Book } from '@/types';
 import BookCard from '@/components/BookCard';
@@ -66,6 +66,8 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const apiClient = useMemo(() => new Client(), []);
 
@@ -87,14 +89,29 @@ const App: React.FC = () => {
     loadMamId();
   }, []);
 
+  // Maintain focus on search input when "no results found" message appears
+  useEffect(() => {
+    if (hasSearched && books.length === 0 && !isLoading && searchInputRef.current) {
+      // Use setTimeout to ensure focus happens after render
+      const timeoutId = setTimeout(() => {
+        if (searchInputRef.current && document.activeElement !== searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [hasSearched, books.length, isLoading]);
+
   const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setBooks([]);
+      setHasSearched(false);
       return;
     }
 
     setIsLoading(true);
     setError(null);
+    setHasSearched(true);
 
     try {
       const response = await apiClient.search(searchQuery);
@@ -140,6 +157,10 @@ const App: React.FC = () => {
       setBooks([]);
     } finally {
       setIsLoading(false);
+      // Maintain focus on search input after search completes
+      if (searchInputRef.current && document.activeElement !== searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
     }
   }, [apiClient]);
 
@@ -152,10 +173,10 @@ const App: React.FC = () => {
       clearTimeout(searchTimeout);
     }
 
-    // Debounce search - wait 500ms after user stops typing
+    // Debounce search - wait 800ms after user stops typing
     const timeout = setTimeout(() => {
       performSearch(val);
-    }, 500);
+    }, 800);
 
     setSearchTimeout(timeout);
   };
@@ -163,6 +184,7 @@ const App: React.FC = () => {
   const clearSearch = () => {
     setQuery('');
     setBooks([]);
+    setHasSearched(false);
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
@@ -209,37 +231,39 @@ const App: React.FC = () => {
     <div className="min-h-screen relative font-sans selection:bg-neo-pink selection:text-neo-black overflow-x-hidden flex flex-col">
       
       {/* Animated Background */}
-      <BackgroundIcons />
+      {(!hasQuery || books.length === 0) && <BackgroundIcons />}
 
       {/* Settings Button - Fixed Top Right */}
-      <div className="fixed top-6 right-6 z-50">
-        <button 
-          onClick={() => setIsSettingsOpen(true)}
-          className="p-3 bg-white border-4 border-neo-black shadow-neo hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] hover:bg-neo-purple transition-all duration-200 group"
-          aria-label="Settings"
-        >
-          <Settings size={24} className="text-neo-black" strokeWidth={2.5} />
-        </button>
-      </div>
+      {(!hasQuery || books.length === 0) && (
+        <div className={`fixed top-6 right-6 z-50 transition-all duration-200 ${hasQuery ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'}`}>
+          <button 
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-3 bg-white border-4 border-neo-black shadow-neo hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] hover:bg-neo-purple transition-all duration-200 group"
+            aria-label="Settings"
+          >
+            <Settings size={24} className="text-neo-black" strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
 
       {/* Main Content Area */}
-      <main className={`relative z-10 flex-grow flex flex-col transition-all duration-500 ease-in-out ${hasQuery ? 'pt-20 px-6 md:px-12' : 'justify-center items-center p-6'}`}>
+      <main className="relative z-10 flex-grow flex flex-col px-6 md:px-12">
         
         {/* Search Wrapper */}
-        <div className={`w-full max-w-4xl flex flex-col transition-all duration-500 ${hasQuery ? 'translate-y-0' : 'translate-y-0'}`}>
+        <div className={`absolute left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] md:w-[calc(100%-6rem)] max-w-7xl flex flex-col transition-all duration-500 ease-in-out z-20 ${hasQuery ? 'top-8 md:top-20 translate-y-0' : 'top-1/2 -translate-y-1/2'}`}>
           
           {/* Search Bar */}
           <div className="relative group w-full">
-            <div className={`relative flex items-center bg-white border-4 border-neo-black shadow-neo-lg transition-all focus-within:shadow-neo focus-within:translate-x-[4px] focus-within:translate-y-[4px]`}>
-              <div className="pl-6 text-neo-black">
+            <div className={`relative flex items-center bg-white border-4 border-neo-black shadow-neo-lg transition-all duration-300 ease-in-out focus-within:shadow-neo focus-within:translate-x-[4px] focus-within:translate-y-[4px]`}>
+              <div className={`pl-6 text-neo-black transition-all duration-200 ${hasQuery ? 'opacity-0 scale-95 pointer-events-none w-0 overflow-hidden' : 'opacity-100 scale-100'}`}>
                 <Search size={32} strokeWidth={3} />
               </div>
               <input
+                ref={searchInputRef}
                 type="text"
                 value={query}
                 onChange={handleSearch}
-                placeholder="SEARCH BOOKS..."
-                className="w-full bg-transparent text-2xl md:text-4xl px-4 py-6 md:py-8 text-neo-black placeholder-gray-400 focus:outline-none font-display font-bold uppercase tracking-tight"
+                className="w-full bg-transparent text-lg md:text-3xl px-4 py-6 md:py-8 text-neo-black focus:outline-none font-display font-bold uppercase tracking-tight"
                 autoFocus
                 disabled={isLoading}
               />
@@ -259,7 +283,7 @@ const App: React.FC = () => {
 
         {/* Results Grid - Only visible when hasQuery is true */}
         {hasQuery && (
-          <div className="w-full max-w-7xl mx-auto mt-16 animate-slide-up">
+          <div className="w-full max-w-7xl mx-auto pt-36 md:pt-72 animate-slide-up relative z-10">
             {isLoading ? (
               <div className="text-center py-20">
                 <div className="inline-block bg-white border-4 border-neo-black p-8 shadow-neo">
@@ -277,13 +301,13 @@ const App: React.FC = () => {
                   />
                 ))}
               </div>
-            ) : (
+            ) : hasSearched ? (
               <div className="text-center py-20">
                 <div className="inline-block bg-white border-4 border-neo-black p-8 shadow-neo rotate-2">
                   <p className="text-2xl text-neo-black font-display font-bold">NO RESULTS FOUND FOR "{query}"</p>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         )}
 
