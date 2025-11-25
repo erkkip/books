@@ -61,6 +61,30 @@ app.post('/api/v1/search', jsonParser, async (req, res) => {
 });
 
 app.post('/api/v1/download', jsonParser, async (req, res) => {
+  // Mock mode for testing - set MOCK_DOWNLOAD=true in .env
+  const isMockMode = process.env.MOCK_DOWNLOAD === 'true';
+  
+  if (isMockMode) {
+    console.log('[MOCK] Download request received for:', req.body.dl);
+    
+    // Simulate network delay (default 1.5 seconds, configurable via MOCK_DOWNLOAD_DELAY_MS)
+    const delayMs = parseInt(process.env.MOCK_DOWNLOAD_DELAY_MS || '1500', 10);
+    await new Promise(resolve => setTimeout(resolve, delayMs));
+    
+    // Simulate success (you can change MOCK_DOWNLOAD_SUCCESS=false to test error cases)
+    const shouldSucceed = process.env.MOCK_DOWNLOAD_SUCCESS !== 'false';
+    
+    if (shouldSucceed) {
+      console.log('[MOCK] Download successful');
+      res.status(204).send();
+    } else {
+      console.log('[MOCK] Download failed (simulated)');
+      res.status(500).send('Mock download failure');
+    }
+    return;
+  }
+
+  // Real implementation
   let client;
   let response;
 

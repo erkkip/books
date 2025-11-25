@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
-import { Download, HardDrive, Clock, Lock } from 'lucide-react';
+import { Download, HardDrive, Clock, Lock, Check } from 'lucide-react';
 import { Book } from '@/types';
 
 interface BookCardProps {
   book: Book;
   index: number;
-  onDownload?: (book: Book) => void;
+  onDownload?: (book: Book) => Promise<boolean>;
 }
 
 const BookCard: React.FC<BookCardProps> = ({ book, index, onDownload }) => {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloaded, setIsDownloaded] = useState(false);
 
   const handleDownload = async () => {
-    if (onDownload && book.downloadUrl) {
+    if (onDownload && book.downloadUrl && !isDownloaded) {
       setIsDownloading(true);
       try {
-        await onDownload(book);
+        const success = await onDownload(book);
+        if (success) {
+          setIsDownloaded(true);
+        }
       } finally {
         setIsDownloading(false);
       }
@@ -24,7 +28,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, index, onDownload }) => {
 
   // Check if download is available
   const isDownloadAvailable = !!book.downloadUrl;
-  const isDisabled = isDownloading || !onDownload || !isDownloadAvailable;
+  const isDisabled = isDownloading || isDownloaded || !onDownload || !isDownloadAvailable;
   const showVipRequired = !isDownloadAvailable && book.vip === 1;
 
   return (
@@ -99,7 +103,9 @@ const BookCard: React.FC<BookCardProps> = ({ book, index, onDownload }) => {
               isDisabled
                 ? isDownloading
                   ? 'bg-neo-green cursor-wait shadow-neo active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'
-                  : 'bg-gray-300 cursor-not-allowed shadow-none'
+                  : isDownloaded
+                    ? 'bg-neo-green cursor-not-allowed shadow-none'
+                    : 'bg-gray-300 cursor-not-allowed shadow-none'
                 : 'bg-neo-yellow hover:bg-neo-pink shadow-neo active:translate-x-[2px] active:translate-y-[2px] active:shadow-none'
             }`}
           >
@@ -107,6 +113,11 @@ const BookCard: React.FC<BookCardProps> = ({ book, index, onDownload }) => {
               <>
                 <div className="animate-spin h-4 w-4 border-2 border-neo-black border-t-transparent rounded-full"></div>
                 LOADING...
+              </>
+            ) : isDownloaded ? (
+              <>
+                <Check size={18} />
+                DOWNLOADED
               </>
             ) : showVipRequired ? (
               <>

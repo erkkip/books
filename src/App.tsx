@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Search, Settings, X, Book as BookIcon, BookText,BookOpen, BookOpenText } from 'lucide-react';
+import { Search, Settings, X, Loader2, Book as BookIcon, BookText,BookOpen, BookOpenText } from 'lucide-react';
 import { Book } from '@/types';
 import BookCard from '@/components/BookCard';
 import SettingsPanel from '@/components/SettingsPanel';
@@ -203,27 +203,30 @@ const App: React.FC = () => {
     }
   };
 
-  const handleDownload = async (book: Book) => {
+  const handleDownload = async (book: Book): Promise<boolean> => {
     if (!book.downloadUrl) {
       console.error('No download URL available');
-      return;
+      return false;
     }
 
     try {
       const response = await apiClient.download(book.downloadUrl);
       if (response.ok || response.status === 204) {
         console.log('Download initiated successfully');
+        return true;
       } else {
         console.error('Download failed:', response.status);
         const errorMessage = 'Download failed. Please try again.';
         setError(errorMessage);
         setShowToast(true);
+        return false;
       }
     } catch (err) {
       console.error('Download error:', err);
       const errorMessage = 'Download failed. Please try again.';
       setError(errorMessage);
       setShowToast(true);
+      return false;
     }
   };
 
@@ -247,10 +250,10 @@ const App: React.FC = () => {
       )}
 
       {/* Main Content Area */}
-      <main className="relative z-10 flex-grow flex flex-col px-6 md:px-12">
+      <main className={`relative z-10 flex-grow flex flex-col px-6 md:px-12 ${books.length > 0 ? '' : 'justify-center'}`}>
         
         {/* Search Wrapper */}
-        <div className={`absolute left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] md:w-[calc(100%-6rem)] max-w-7xl flex flex-col transition-all duration-500 ease-in-out z-20 ${hasQuery ? 'top-8 md:top-20 translate-y-0' : 'top-1/2 -translate-y-1/2'}`}>
+        <div className={`w-full max-w-7xl mx-auto flex flex-col ${books.length > 0 ? 'pt-8 md:pt-20' : ''}`}>
           
           {/* Search Bar */}
           <div className="relative group w-full">
@@ -273,7 +276,11 @@ const App: React.FC = () => {
                   className="pr-6 text-neo-black hover:text-neo-pink transition-colors"
                   disabled={isLoading}
                 >
-                  <X size={32} strokeWidth={3} />
+                  {isLoading ? (
+                    <Loader2 size={32} strokeWidth={3} className="animate-spin" />
+                  ) : (
+                    <X size={32} strokeWidth={3} />
+                  )}
                 </button>
               )}
             </div>
@@ -283,14 +290,8 @@ const App: React.FC = () => {
 
         {/* Results Grid - Only visible when hasQuery is true */}
         {hasQuery && (
-          <div className="w-full max-w-7xl mx-auto pt-36 md:pt-72 animate-slide-up relative z-10">
-            {isLoading ? (
-              <div className="text-center py-20">
-                <div className="inline-block bg-white border-4 border-neo-black p-8 shadow-neo">
-                  <p className="text-2xl text-neo-black font-display font-bold">SEARCHING...</p>
-                </div>
-              </div>
-            ) : books.length > 0 ? (
+          <div className="w-full max-w-7xl mx-auto pt-8 md:pt-12 animate-slide-up">
+            {books.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-20">
                 {books.map((book, index) => (
                   <BookCard 
@@ -301,7 +302,7 @@ const App: React.FC = () => {
                   />
                 ))}
               </div>
-            ) : hasSearched ? (
+            ) : hasSearched && !isLoading ? (
               <div className="text-center py-20">
                 <div className="inline-block bg-white border-4 border-neo-black p-8 shadow-neo rotate-2">
                   <p className="text-2xl text-neo-black font-display font-bold">NO RESULTS FOUND FOR "{query}"</p>
