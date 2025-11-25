@@ -59,19 +59,20 @@ const BookCard: React.FC<BookCardProps> = ({ book, index, onDownload }) => {
 
           {/* Formats/Tags */}
           <div className="flex-grow mb-6">
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-2">
               {book.formats.map((fmt, i) => {
-                const isHighlighted = fmt.toLowerCase() === 'eng' || fmt.toLowerCase() === 'epub';
+                const fmtLower = fmt.toLowerCase().trim();
+                const isHighlighted = fmtLower === 'eng' || fmtLower === 'epub';
                 return (
                   <span 
-                    key={i} 
-                    className={`px-2 py-[1px] text-[10px] font-bold uppercase border-2 border-neo-black ${
+                    key={`${fmt}-${i}`} 
+                    className={`px-2 py-1 text-[10px] font-bold uppercase border-2 border-neo-black ${
                       isHighlighted 
                         ? 'bg-neo-yellow text-neo-black' 
                         : 'bg-neo-bg text-neo-black'
                     }`}
                   >
-                    {fmt}
+                    {fmt.trim()}
                   </span>
                 );
               })}

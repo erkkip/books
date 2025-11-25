@@ -18,8 +18,20 @@ export interface ApiBookResponse {
 
 // Transform API response to Book type
 export function transformApiBookToBook(apiBook: ApiBookResponse, index: number): Book {
-  // Parse formats from filetype (could be comma-separated)
-  const formats = apiBook.filetype ? apiBook.filetype.split(',').map(f => f.trim()) : [];
+  // Parse formats from filetype (could be comma-separated, space-separated, or single value)
+  let formats: string[] = [];
+  if (apiBook.filetype) {
+    const filetypeStr = String(apiBook.filetype).trim();
+    // Try splitting by comma first, then by space if no commas found
+    if (filetypeStr.includes(',')) {
+      formats = filetypeStr.split(',').map(f => f.trim()).filter(f => f.length > 0);
+    } else if (filetypeStr.includes(' ')) {
+      formats = filetypeStr.split(/\s+/).map(f => f.trim()).filter(f => f.length > 0);
+    } else {
+      // Single format
+      formats = [filetypeStr];
+    }
+  }
   
   // Add language code to formats if present
   if (apiBook.lang_code) {
